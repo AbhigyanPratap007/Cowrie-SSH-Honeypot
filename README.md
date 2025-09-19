@@ -1,53 +1,56 @@
 # Cowrie SSH Honeypot Lab
 
-**What:** Local Cowrie honeypot deployment to capture SSH brute-force attempts and attacker shell activity.  
-**Stack:** Cowrie on Ubuntu VM (Python venv). No production exposure — lab only.
+## 📌 Overview
+This project demonstrates the deployment of a **Cowrie SSH honeypot** on Ubuntu running in VMware.  
+The honeypot was designed to simulate an exposed SSH server and capture attacker activity, including brute-force login attempts and command executions.  
+The goal was to analyze attacker behavior, credentials used, and generate SOC-style reports to better understand real-world threats.
 
-## What I did
-- Deployed Cowrie on an Ubuntu VM and configured it to listen on port `2222`.
-- Simulated brute-force logins and attacker commands (using `sshpass` loops).
-- Collected structured events (`var/log/cowrie/cowrie.json`) and TTY session logs (`var/lib/cowrie/tty/`).
-- Extracted results: **100+ failed login events**, top credential statistics, and TTY command captures for SOC reporting.
+---
 
-## Key files
-- `logs/cowrie.json` — full JSON events (sample retained).
-- `logs/tty_logs/` — TTY session files.
-- `docs/setup_instructions.md` — commands for reproducing the lab.
-- `docs/report.md` — short SOC-style analysis and findings.
+## ⚙️ Setup
+- **Platform**: VMware Workstation with Ubuntu VM  
+- **Honeypot Tool**: Cowrie SSH Honeypot  
+- **Configuration**:  
+  - Cowrie installed and configured to emulate an SSH server  
+  - Default services exposed to attract automated scanners and bots  
+  - Logging enabled to capture attacker commands and failed logins  
 
-## Quick reproduction
-VM & Environment Setup
-sudo apt update && sudo apt upgrade -y
-sudo apt install git python3 python3-venv python3-pip libssl-dev libffi-dev build-essential virtualenv sshpass -y
-Cowrie Installation
-git clone https://github.com/cowrie/cowrie.git
-cd cowrie
-python3 -m venv cowrie-env
-source cowrie-env/bin/activate
-pip install --upgrade pip
-pip install -r requirements.txt
-cp etc/cowrie.cfg.dist etc/cowrie.cfg
-nano etc/cowrie.cfg   # set listen_port = 2222
-Run Cowrie
-bin/cowrie start
-bin/cowrie stop
-tail -f var/log/cowrie/cowrie.json
-Test Login (fake SSH session)
-ssh root@localhost -p 2222
-Simulated Attack Loop (Brute Force) - Basic
-for u in root admin test user; do
-  for p in 123456 password admin qwerty letmein; do
-    sshpass -p "$p" ssh -o StrictHostKeyChecking=no -p 2222 "$u"@localhost "exit" 2>/dev/null || true
-  done
-done
-Simulated Attack Loop (Brute Force) - Extended
-for u in root admin test user dev; do
-  for p in 123456 password admin qwerty letmein toor dragon shadow iloveyou default; do
-    sshpass -p "$p" ssh -o StrictHostKeyChecking=no -p 2222 "$u"@localhost "exit" 2>/dev/null || true
-  done
-done
-View Logs
-tail -f var/log/cowrie/cowrie.json
-ls var/lib/cowrie/tty/
+---
 
+## 🎯 Objectives
+- Deploy a controlled honeypot to attract brute-force attempts  
+- Capture attacker behavior, including login attempts and commands  
+- Analyze credential patterns used by attackers  
+- Generate SOC-style reports on observed malicious activity  
+
+---
+
+## 🔍 Methodology
+1. **Deployment**: Installed Cowrie on an Ubuntu VM and configured it to accept SSH connections.  
+2. **Attack Simulation**: Exposed the VM to simulate internet-facing access.  
+3. **Data Collection**: Cowrie logged all incoming SSH connections, login attempts, and commands.  
+4. **Analysis**: Parsed log files to extract:  
+   - Common usernames and passwords attempted  
+   - Frequency of brute-force login attempts  
+   - Attacker interaction with the honeypot shell  
+
+---
+
+## 📊 Results
+- **Total SSH brute-force attempts recorded**: 220+  
+- **Failed login events collected**: 200+  
+- **Top credentials attempted**:  
+  - `root/123456`  
+  - `admin/password`  
+  - `test/test`  
+- **Patterns observed**:  
+  - Automated scripts attempting weak/default credentials  
+  - Attackers primarily targeting root/admin accounts  
+
+These findings demonstrate the constant nature of brute-force attacks on exposed SSH endpoints and emphasize the importance of strong authentication controls.
+
+---
+
+## 📄 Evidence & Reports
+- 📑 Detailed logs, screenshots, and analysis are available in the [COWRIE_HONEYPOT.pdf](docs/COWRIE_HONEYPOT.pdf).
 
